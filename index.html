@@ -1,0 +1,1736 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>蜂鸟快工 · 交互原型</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --primary: #FF6B18;
+    --primary-light: #FFF3EC;
+    --primary-dark: #E55A10;
+    --bg: #F5F5F5;
+    --card: #FFFFFF;
+    --text: #1A1A1A;
+    --text-2: #666666;
+    --text-3: #999999;
+    --border: #EEEEEE;
+    --green: #1BB86A;
+    --red: #E03E3E;
+    --blue: #1A73E8;
+    --tag-orange: #FFF0E6;
+    --tag-orange-text: #E05A00;
+    --tag-blue: #E8F0FE;
+    --tag-blue-text: #1558B0;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+  html, body {
+    height: 100%;
+    background: #E0E0E0;
+    font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .device {
+    width: 390px;
+    height: 844px;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35), 0 0 0 8px #1A1A1A, 0 0 0 10px #3A3A3A;
+  }
+  .screen {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    display: none;
+    flex-direction: column;
+    background: var(--bg);
+    overflow: hidden;
+  }
+  .screen.active { display: flex; }
+
+  /* Status bar */
+  .status-bar {
+    height: 48px;
+    padding: 14px 24px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .status-bar .time { font-size: 15px; font-weight: 700; }
+  .status-icons { display: flex; align-items: center; gap: 5px; }
+  .signal-bars { display: flex; align-items: flex-end; gap: 1px; }
+  .signal-bars span { display: block; width: 3px; background: var(--text); border-radius: 1px; }
+  .signal-bars span:nth-child(1) { height: 4px; }
+  .signal-bars span:nth-child(2) { height: 6px; }
+  .signal-bars span:nth-child(3) { height: 9px; }
+  .signal-bars span:nth-child(4) { height: 11px; }
+  .wifi-icon { font-size: 13px; }
+  .battery {
+    width: 22px; height: 12px;
+    border: 1.5px solid var(--text);
+    border-radius: 2px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 1px;
+  }
+  .battery::after {
+    content: '';
+    position: absolute;
+    right: -4px; top: 50%;
+    transform: translateY(-50%);
+    width: 2px; height: 5px;
+    background: var(--text);
+    border-radius: 0 1px 1px 0;
+  }
+  .battery-fill { height: 100%; width: 75%; background: var(--text); border-radius: 1px; }
+
+  /* Bottom nav */
+  .bottom-nav {
+    height: 82px;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 10px;
+    flex-shrink: 0;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    transition: color 0.2s;
+    color: var(--text-3);
+  }
+  .nav-item.active { color: var(--primary); }
+  .nav-icon {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .nav-label { font-size: 11px; }
+  .nav-icon svg { width: 24px; height: 24px; }
+
+  /* Scrollable content */
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-content::-webkit-scrollbar { display: none; }
+
+  /* ========== LOGIN SCREEN ========== */
+  #screen-login { background: #FFF8F4; }
+  #screen-login .status-bar { color: #333; }
+  .login-bg {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 32px 40px;
+  }
+  .login-logo {
+    width: 80px; height: 80px;
+    background: var(--primary);
+    border-radius: 22px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 20px 0 16px;
+  }
+  .login-logo svg { width: 52px; height: 52px; }
+  .login-title { font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .login-sub { font-size: 14px; color: var(--text-3); margin-bottom: 48px; }
+  .btn-wechat {
+    width: 100%;
+    height: 52px;
+    background: var(--primary);
+    border: none;
+    border-radius: 26px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    transition: background 0.2s, transform 0.1s;
+  }
+  .btn-wechat:active { background: var(--primary-dark); transform: scale(0.98); }
+  .btn-phone {
+    width: 100%;
+    height: 52px;
+    background: white;
+    border: 1.5px solid #DDD;
+    border-radius: 26px;
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-phone:active { background: #F5F5F5; }
+  .login-other { margin-top: 20px; font-size: 13px; color: var(--text-3); }
+  .login-terms {
+    margin-top: auto;
+    text-align: center;
+    font-size: 11.5px;
+    color: var(--text-3);
+    line-height: 1.6;
+  }
+  .login-terms a { color: var(--primary); text-decoration: none; }
+  .login-illustration {
+    width: 220px; height: 140px;
+    margin: 10px 0 30px;
+    position: relative;
+  }
+
+  /* ========== HOME SCREEN ========== */
+  .home-header {
+    background: white;
+    padding: 0 16px 12px;
+    flex-shrink: 0;
+  }
+  .home-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .location-btn {
+    display: flex; align-items: center; gap: 4px;
+    font-size: 16px; font-weight: 700; color: var(--text);
+    cursor: pointer; background: none; border: none;
+  }
+  .location-btn svg { width: 16px; height: 16px; color: var(--primary); }
+  .search-box {
+    flex: 1;
+    height: 36px;
+    background: #F5F5F5;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .search-box svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .banner-card {
+    margin: 0 0 12px;
+    background: linear-gradient(135deg, #FF7730, #FF4D00);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+  }
+  .banner-text h3 { color: white; font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+  .banner-text p { color: rgba(255,255,255,0.85); font-size: 12px; }
+  .banner-icon {
+    width: 44px; height: 44px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .notice-bar {
+    background: #FFF3EC;
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    color: #CC5500;
+    margin-bottom: 8px;
+  }
+  .notice-bar svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .notice-bar .arrow { margin-left: auto; opacity: 0.6; }
+  .quick-cats {
+    display: flex;
+    gap: 0;
+    justify-content: space-around;
+    padding: 4px 0 0;
+  }
+  .quick-cat {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+    font-size: 12px; color: var(--text-2);
+  }
+  .quick-cat .cat-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .filter-tabs {
+    background: white;
+    padding: 0 16px;
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+  .filter-tab {
+    padding: 10px 16px;
+    font-size: 14px;
+    color: var(--text-3);
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+  }
+  .filter-tab.active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+    font-weight: 600;
+  }
+  .filter-row {
+    background: white;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .filter-chip {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    font-size: 12px;
+    color: var(--text-2);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .filter-chip svg { width: 12px; height: 12px; }
+  .filter-chip.sort { color: var(--primary); border-color: var(--primary); }
+  .job-list { padding: 8px 12px; }
+  .job-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: transform 0.15s;
+    box-shadow: var(--shadow);
+  }
+  .job-card:active { transform: scale(0.98); }
+  .job-card-top {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .company-logo {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+    overflow: hidden;
+  }
+  .job-main { flex: 1; min-width: 0; }
+  .job-title { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+  .job-company { font-size: 12px; color: var(--text-3); }
+  .job-wage { font-size: 18px; font-weight: 700; color: var(--primary); white-space: nowrap; }
+  .job-wage small { font-size: 12px; font-weight: 400; }
+  .job-meta {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 12px; color: var(--text-3);
+    margin-bottom: 10px;
+  }
+  .job-meta svg { width: 12px; height: 12px; }
+  .job-meta span { display: flex; align-items: center; gap: 3px; }
+  .job-footer {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .job-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .tag-orange { background: var(--tag-orange); color: var(--tag-orange-text); }
+  .tag-blue { background: var(--tag-blue); color: var(--tag-blue-text); }
+  .tag-green { background: #E8F8EE; color: #0D7A40; }
+  .tag-gray { background: #F2F2F2; color: #666; }
+  .btn-apply {
+    padding: 7px 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  .btn-apply:active { background: var(--primary-dark); }
+  .urgency-badge {
+    background: #FFF0E6;
+    color: var(--primary);
+    border: 1px solid #FFD4B3;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-right: 4px;
+  }
+  .slots-info {
+    font-size: 11.5px; color: var(--text-3);
+    display: flex; align-items: center; gap: 3px;
+  }
+
+  /* ========== SHIFTS SCREEN ========== */
+  .shifts-header {
+    background: var(--primary);
+    padding: 8px 16px 20px;
+    flex-shrink: 0;
+  }
+  .shifts-header .status-bar { color: white; }
+  .shifts-header .status-bar .signal-bars span { background: white; }
+  .shifts-header .status-bar .battery { border-color: white; }
+  .shifts-header .status-bar .battery::after { background: white; }
+  .shifts-header .status-bar .battery-fill { background: white; }
+  .shifts-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .shifts-top h2 { color: white; font-size: 18px; font-weight: 700; }
+  .shifts-top svg { width: 22px; height: 22px; color: white; }
+  .stats-row {
+    display: flex; gap: 0;
+  }
+  .stat-item {
+    flex: 1;
+    text-align: center;
+  }
+  .stat-item + .stat-item { border-left: 1px solid rgba(255,255,255,0.3); }
+  .stat-label { font-size: 11px; color: rgba(255,255,255,0.75); margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 700; color: white; }
+  .stat-value small { font-size: 13px; font-weight: 400; }
+  .checkin-card {
+    background: white;
+    margin: -12px 12px 0;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+  }
+  .checkin-alert {
+    display: flex; align-items: center; gap: 8px;
+    background: #FFF3EC;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 12.5px;
+    color: #CC5500;
+  }
+  .checkin-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .btn-verify {
+    margin-left: auto;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-qr {
+    width: 100%;
+    height: 46px;
+    background: var(--primary);
+    border: none;
+    border-radius: 23px;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: background 0.2s;
+  }
+  .btn-qr:active { background: var(--primary-dark); }
+  .calendar-section {
+    background: white;
+    margin: 10px 12px;
+    border-radius: var(--radius);
+    padding: 14px;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+  }
+  .cal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cal-header h3 { font-size: 15px; font-weight: 600; }
+  .cal-nav { display: flex; gap: 12px; }
+  .cal-nav button {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-3); font-size: 16px; padding: 0;
+  }
+  .cal-days-header {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 11px; color: var(--text-3);
+    margin-bottom: 6px;
+  }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+  .cal-day {
+    height: 34px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--text-2);
+    border-radius: 6px;
+    cursor: pointer;
+    position: relative;
+  }
+  .cal-day.today {
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+  }
+  .cal-day.has-dot::after {
+    content: '';
+    position: absolute;
+    bottom: 2px;
+    width: 4px; height: 4px;
+    background: var(--primary);
+    border-radius: 50%;
+  }
+  .cal-day.today.has-dot::after { background: white; }
+  .cal-day.other-month { color: var(--text-3); opacity: 0.4; }
+  .shift-list-section { padding: 4px 12px 12px; }
+  .shift-section-title {
+    font-size: 14px; font-weight: 600; color: var(--text);
+    margin: 12px 0 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .shift-count-badge {
+    background: var(--primary);
+    color: white;
+    width: 18px; height: 18px;
+    border-radius: 9px;
+    font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+  .shift-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  .shift-card.active-shift { border-left: 3px solid var(--green); }
+  .shift-card.pending-shift { border-left: 3px solid var(--text-3); }
+  .shift-card-top {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .shift-status-badge {
+    font-size: 11px; padding: 3px 8px;
+    border-radius: 4px; font-weight: 600;
+  }
+  .badge-active { background: #E8F8EE; color: var(--green); }
+  .badge-pending { background: #F5F5F5; color: var(--text-3); }
+  .shift-wage { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .shift-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+  .shift-info { font-size: 12.5px; color: var(--text-3); }
+  .shift-timer {
+    text-align: center;
+    font-size: 36px; font-weight: 700;
+    color: var(--text);
+    letter-spacing: 2px;
+    margin: 10px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .shift-actions {
+    display: flex; gap: 10px;
+  }
+  .btn-rest {
+    flex: 1; height: 40px;
+    background: white; border: 1.5px solid var(--border);
+    border-radius: 20px; font-size: 14px; color: var(--text-2);
+    cursor: pointer;
+  }
+  .btn-end {
+    flex: 2; height: 40px;
+    background: var(--primary); border: none;
+    border-radius: 20px; font-size: 14px; font-weight: 600; color: white;
+    cursor: pointer;
+  }
+  .btn-route {
+    width: 100%; height: 38px;
+    background: #F5F5F5; border: none;
+    border-radius: 19px; font-size: 13px; color: var(--text-2);
+    cursor: pointer; margin-top: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+
+  /* ========== JOB DETAIL ========== */
+  .detail-header {
+    background: white;
+    padding: 10px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .detail-header h2 { font-size: 17px; font-weight: 700; color: var(--text); }
+  .back-btn {
+    width: 32px; height: 32px;
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text);
+  }
+  .detail-body { padding: 14px 16px; }
+  .detail-title-row {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .detail-job-title { font-size: 20px; font-weight: 700; color: var(--text); }
+  .detail-wage { font-size: 20px; font-weight: 700; color: var(--primary); }
+  .detail-wage small { font-size: 13px; font-weight: 400; }
+  .detail-tags { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .detail-meta-row {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--text-2);
+    margin-bottom: 6px;
+  }
+  .detail-meta-row svg { width: 15px; height: 15px; color: var(--text-3); flex-shrink: 0; }
+  .section-block {
+    background: white;
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    box-shadow: var(--shadow);
+  }
+  .section-block h4 {
+    font-size: 14px; font-weight: 700; color: var(--text);
+    margin-bottom: 10px;
+  }
+  .map-placeholder {
+    width: 100%; height: 120px;
+    background: #E8F0E8;
+    border-radius: 10px;
+    position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 8px;
+  }
+  .map-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(150,180,150,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(150,180,150,0.3) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  .map-road-h {
+    position: absolute; left: 0; right: 0;
+    background: white; opacity: 0.8;
+  }
+  .map-road-v {
+    position: absolute; top: 0; bottom: 0;
+    background: white; opacity: 0.8;
+  }
+  .map-pin {
+    position: absolute;
+    z-index: 2;
+    display: flex; flex-direction: column; align-items: center;
+  }
+  .map-pin-dot {
+    width: 20px; height: 20px;
+    background: var(--primary);
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    border: 2px solid white;
+  }
+  .location-info {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .location-info svg { width: 16px; height: 16px; color: var(--primary); flex-shrink: 0; }
+  .location-text { font-size: 13px; color: var(--text-2); flex: 1; }
+  .location-dist { font-size: 12px; color: var(--text-3); white-space: nowrap; }
+  .req-item {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13.5px; color: var(--text);
+    margin-bottom: 8px;
+  }
+  .req-icon {
+    width: 18px; height: 18px;
+    background: #E8F8EE; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .req-icon svg { width: 11px; height: 11px; color: var(--green); }
+  .company-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .company-avatar {
+    width: 40px; height: 40px;
+    background: #FFF3EC;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px; flex-shrink: 0;
+  }
+  .company-name { font-size: 14px; font-weight: 600; color: var(--text); }
+  .company-rating { font-size: 12px; color: var(--text-3); }
+  .cancel-policy {
+    background: #FFF8F4;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    color: #CC5500;
+    line-height: 1.6;
+    display: flex; align-items: flex-start; gap: 8px;
+  }
+  .cancel-policy svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+  .detail-bottom {
+    padding: 12px 16px 20px;
+    background: white;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0;
+  }
+  .detail-msg-btn {
+    width: 44px; height: 44px;
+    background: #F5F5F5;
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .detail-msg-btn svg { width: 20px; height: 20px; color: var(--text-2); }
+  .btn-apply-big {
+    flex: 1; height: 44px;
+    background: var(--primary);
+    border: none; border-radius: 22px;
+    color: white; font-size: 16px; font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .btn-apply-big:active { background: var(--primary-dark); }
+
+  /* ========== PROFILE SCREEN ========== */
+  .profile-header {
+    background: var(--primary);
+    padding: 8px 16px 24px;
+    flex-shrink: 0;
+  }
+  .profile-header .status-bar { color: white; }
+  .profile-header .status-bar .signal-bars span { background: white; }
+  .profile-header .status-bar .battery { border-color: white; }
+  .profile-header .status-bar .battery::after { background: white; }
+  .profile-header .status-bar .battery-fill { background: white; }
+  .profile-top {
+    display: flex; align-items: center; gap: 12px; margin-bottom: 14px;
+  }
+  .profile-avatar {
+    width: 58px; height: 58px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255,255,255,0.6);
+    background: #FFC090;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px; flex-shrink: 0;
+  }
+  .profile-info { flex: 1; }
+  .profile-name { font-size: 18px; font-weight: 700; color: white; margin-bottom: 4px; }
+  .profile-badges { display: flex; gap: 6px; }
+  .profile-badge {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+  .profile-qr {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .profile-qr svg { width: 20px; height: 20px; color: white; }
+  .progress-section { margin-bottom: 4px; }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 12px; color: rgba(255,255,255,0.85);
+    margin-bottom: 4px;
+  }
+  .progress-bar {
+    height: 6px; background: rgba(255,255,255,0.3); border-radius: 3px;
+  }
+  .progress-fill {
+    height: 100%; background: white; border-radius: 3px;
+    transition: width 0.5s ease;
+  }
+  .progress-hint {
+    font-size: 11px; color: rgba(255,255,255,0.7);
+    margin-top: 4px; text-align: right;
+  }
+  .income-card {
+    background: white;
+    margin: -14px 12px 0;
+    border-radius: var(--radius);
+    padding: 16px;
+    box-shadow: var(--shadow);
+    flex-shrink: 0;
+  }
+  .income-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .income-header h3 { font-size: 14px; font-weight: 600; color: var(--text); }
+  .income-header a { font-size: 12.5px; color: var(--text-3); text-decoration: none; }
+  .income-total { font-size: 30px; font-weight: 700; color: var(--primary); margin-bottom: 10px; }
+  .income-total small { font-size: 14px; color: var(--text-3); font-weight: 400; }
+  .income-split {
+    display: flex; gap: 0; border-top: 1px solid var(--border); padding-top: 10px;
+  }
+  .income-item { flex: 1; text-align: center; }
+  .income-item + .income-item { border-left: 1px solid var(--border); }
+  .income-item-label { font-size: 11.5px; color: var(--text-3); margin-bottom: 3px; }
+  .income-item-value { font-size: 15px; font-weight: 600; color: var(--text); }
+  .stats-strip {
+    background: white;
+    margin: 10px 12px;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; gap: 0;
+    box-shadow: var(--shadow);
+  }
+  .stats-strip-item { flex: 1; text-align: center; }
+  .stats-strip-item + .stats-strip-item { border-left: 1px solid var(--border); }
+  .stats-strip-value { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .stats-strip-value.highlight { color: var(--primary); }
+  .stats-strip-label { font-size: 11px; color: var(--text-3); }
+  .quick-actions {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    background: white;
+    border-radius: var(--radius);
+    margin: 0 12px 10px;
+    padding: 14px 0;
+    box-shadow: var(--shadow);
+  }
+  .action-item {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    cursor: pointer;
+    padding: 4px 0;
+  }
+  .action-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .action-icon svg { width: 22px; height: 22px; }
+  .action-label { font-size: 11.5px; color: var(--text-2); text-align: center; }
+  .settings-rows {
+    background: white;
+    border-radius: var(--radius);
+    margin: 0 12px 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .settings-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row svg { width: 18px; height: 18px; color: var(--text-3); }
+  .settings-row span { flex: 1; font-size: 14px; color: var(--text); }
+  .settings-row .chevron { color: var(--text-3); font-size: 14px; }
+
+  /* Page transitions */
+  .screen { animation: none; }
+  .screen.slide-in { animation: slideIn 0.25s ease-out; }
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Timer */
+  #timer-display { font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<div class="device">
+
+  <!-- ============ SCREEN: LOGIN ============ -->
+  <div class="screen active" id="screen-login">
+    <div class="status-bar" style="background:#FFF8F4; color:#333;">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <div class="signal-bars">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <span style="font-size:13px">WiFi</span>
+        <div class="battery"><div class="battery-fill"></div></div>
+      </div>
+    </div>
+    <div class="login-bg">
+      <div class="login-logo">
+        <svg viewBox="0 0 52 52" fill="none">
+          <path d="M26 8C18 8 11 13 11 21C11 26 14 30 19 33L17 44L26 39L35 44L33 33C38 30 41 26 41 21C41 13 34 8 26 8Z" fill="white" opacity="0.95"/>
+          <path d="M20 21C21.1 21 22 20.1 22 19C22 17.9 21.1 17 20 17C18.9 17 18 17.9 18 19C18 20.1 18.9 21 20 21Z" fill="#FF6B18"/>
+          <path d="M32 21C33.1 21 34 20.1 34 19C34 17.9 33.1 17 32 17C30.9 17 30 17.9 30 19C30 20.1 30.9 21 32 21Z" fill="#FF6B18"/>
+          <path d="M20 25C20 25 22 28 26 28C30 28 32 25 32 25" stroke="#FF6B18" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 14C12 18 12 22 14 26" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+          <path d="M37 14C40 18 40 22 38 26" stroke="white" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/>
+        </svg>
+      </div>
+      <div class="login-title">欢迎加入 蜂鸟快工</div>
+      <div class="login-sub">快速找活，按时结薪</div>
+
+      <!-- Illustration -->
+      <svg width="220" height="130" viewBox="0 0 220 130" fill="none" style="margin-bottom:24px">
+        <rect x="10" y="40" width="200" height="80" rx="12" fill="#FFF0E6"/>
+        <rect x="30" y="60" width="70" height="8" rx="4" fill="#FFB380"/>
+        <rect x="30" y="75" width="50" height="6" rx="3" fill="#FFD0B3"/>
+        <rect x="30" y="88" width="40" height="6" rx="3" fill="#FFD0B3"/>
+        <rect x="140" y="60" width="50" height="30" rx="8" fill="#FF6B18"/>
+        <rect x="148" y="68" width="34" height="4" rx="2" fill="rgba(255,255,255,0.6)"/>
+        <rect x="148" y="76" width="25" height="4" rx="2" fill="rgba(255,255,255,0.6)"/>
+        <circle cx="110" cy="20" r="18" fill="#FFB380"/>
+        <path d="M102 20C102 20 106 24 110 24C114 24 118 20 118 20" stroke="#FF6B18" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="105" cy="17" r="2" fill="#FF6B18"/>
+        <circle cx="115" cy="17" r="2" fill="#FF6B18"/>
+        <line x1="110" y1="38" x2="110" y2="48" stroke="#FFB380" stroke-width="3"/>
+      </svg>
+
+      <button class="btn-wechat" onclick="goToHome()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M9.5 14.5C12.5 14.5 15 12.5 15 10C15 7.5 12.5 6 9.5 6C6.5 6 4 7.5 4 10C4 11.2 4.6 12.3 5.6 13.1L5 16L7.8 14.8C8.3 14.9 8.9 15 9.5 15" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 12.5C14.5 13.8 16 14.8 17.8 14.8L20 16L19.5 13.5C20.4 12.8 21 11.8 21 10.7C21 8.7 19 7 16.5 7C15.5 7 14.6 7.3 13.8 7.8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        微信一键登录
+      </button>
+      <button class="btn-phone" onclick="goToHome()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <path d="M5 4H9L11 9L8.5 10.5C9.57 12.55 11.45 14.43 13.5 15.5L15 13L20 15V19C20 19.55 19.55 20 19 20C10.61 20 4 13.39 4 5C4 4.45 4.45 4 5 4Z" stroke="#333" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        手机号验证登录
+      </button>
+      <div class="login-other">其他方式</div>
+      <div class="login-terms">
+        我已阅读并同意 <a href="#">用户十议</a> 和 <a href="#">隐私政策</a>，<br>
+        并授权蜂鸟快工获取本机号码。
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: HOME ============ -->
+  <div class="screen" id="screen-home">
+    <div class="status-bar" style="background:white; color:#333;">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+        <span style="font-size:13px">WiFi</span>
+        <div class="battery"><div class="battery-fill"></div></div>
+      </div>
+    </div>
+    <div class="home-header">
+      <div class="home-top">
+        <button class="location-btn">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z" stroke="#FF6B18" stroke-width="1.4"/><circle cx="8" cy="6" r="1.5" fill="#FF6B18"/></svg>
+          上海
+          <svg viewBox="0 0 12 12" width="12" height="12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#999" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </button>
+        <div class="search-box">
+          <svg viewBox="0 0 16 16" fill="none"><circle cx="7" cy="7" r="4.5" stroke="#999" stroke-width="1.4"/><path d="M11 11L14 14" stroke="#999" stroke-width="1.4" stroke-linecap="round"/></svg>
+          搜索职位或任务
+        </div>
+      </div>
+      <div class="banner-card">
+        <div class="banner-text">
+          <h3>新人专享：首单奖励20元</h3>
+          <p>立即接单，奖励秒到账</p>
+        </div>
+        <div class="banner-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9L12 2Z" stroke="white" stroke-width="1.8" fill="rgba(255,255,255,0.3)"/>
+          </svg>
+        </div>
+      </div>
+      <div class="notice-bar">
+        <svg viewBox="0 0 14 14" fill="none"><path d="M7 1a6 6 0 100 12A6 6 0 007 1zm0 4v3m0 2v.5" stroke="#CC5500" stroke-width="1.3" stroke-linecap="round"/></svg>
+        健康证在线上传，接单更便捷
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" class="arrow"><path d="M4.5 3L7.5 6L4.5 9" stroke="#CC5500" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="quick-cats">
+        <div class="quick-cat">
+          <div class="cat-icon" style="background:#FFF0E6">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#FF6B18" stroke-width="1.6" stroke-linejoin="round"/><path d="M3 9l2-5h14l2 5" stroke="#FF6B18" stroke-width="1.6" stroke-linejoin="round"/><path d="M9 9v1a3 3 0 006 0V9" stroke="#FF6B18" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <span>品牌名企</span>
+        </div>
+        <div class="quick-cat">
+          <div class="cat-icon" style="background:#E8F8EE">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#1BB86A" stroke-width="1.6" stroke-linejoin="round"/><circle cx="12" cy="9" r="2.5" stroke="#1BB86A" stroke-width="1.4"/></svg>
+          </div>
+          <span>附近兼职</span>
+        </div>
+        <div class="quick-cat">
+          <div class="cat-icon" style="background:#EEF4FF">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2.5" stroke="#1A73E8" stroke-width="1.6"/><path d="M8 2v3M16 2v3M3 9h18" stroke="#1A73E8" stroke-width="1.6" stroke-linecap="round"/><path d="M7 13h2v2H7z" fill="#1A73E8"/><path d="M11 13h2v2h-2z" fill="#1A73E8"/><path d="M15 13h2v2h-2z" fill="#1A73E8"/></svg>
+          </div>
+          <span>长期兼职</span>
+        </div>
+        <div class="quick-cat">
+          <div class="cat-icon" style="background:#FFF3E8">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2l2.5 6.5H21l-5.5 4 2 6.5L12 15l-5.5 4 2-6.5L3 8.5h6.5L12 2z" stroke="#FF8C00" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </div>
+          <span>高薪专区</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="filter-tabs">
+      <div class="filter-tab active">全部</div>
+      <div class="filter-tab">餐饮</div>
+      <div class="filter-tab">零售</div>
+      <div class="filter-tab">物流</div>
+      <div class="filter-tab">促销</div>
+    </div>
+    <div class="filter-row">
+      <div class="filter-chip sort">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M1 4h10M3 7h6M5 10h2" stroke="#FF6B18" stroke-width="1.2" stroke-linecap="round"/></svg>
+        智能排序
+      </div>
+      <div class="filter-chip">
+        距离·
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#666" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="filter-chip">
+        薪资·
+        <svg viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="#666" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </div>
+      <div class="filter-chip" style="margin-left:auto">
+        <svg viewBox="0 0 12 12" fill="none"><path d="M1 3h10M2 6h8M3 9h6" stroke="#666" stroke-width="1.2" stroke-linecap="round"/></svg>
+        筛选
+      </div>
+    </div>
+
+    <div class="scroll-content">
+      <div class="job-list">
+        <!-- Job Card 1 -->
+        <div class="job-card" onclick="goToDetail()">
+          <div class="job-card-top">
+            <div class="company-logo" style="background:#FFE0E0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l-1.5 11a2 2 0 01-2 1.8H9.5A2 2 0 017.5 14L6 3z" stroke="#C0392B" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 7h2a2 2 0 010 4h-2" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/><path d="M8 19h8" stroke="#C0392B" stroke-width="1.5" stroke-linecap="round"/><path d="M10 16v3M14 16v3" stroke="#C0392B" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <div class="job-main">
+              <div class="job-title">瑞幸咖啡服务员</div>
+              <div class="job-company">瑞幸咖啡（徐家汇店）· 1.2km</div>
+            </div>
+            <div class="job-wage">¥25<small>/时</small></div>
+          </div>
+          <div class="job-meta">
+            <span>
+              <svg viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="#999" stroke-width="1.1"/><path d="M4 1v2M8 1v2M1 5h10" stroke="#999" stroke-width="1.1" stroke-linecap="round"/></svg>
+              05月20日
+            </span>
+            <span>
+              <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#999" stroke-width="1.1"/><path d="M6 4v2.5L7.5 8" stroke="#999" stroke-width="1.1" stroke-linecap="round"/></svg>
+              10:00–18:00
+            </span>
+          </div>
+          <div class="job-footer">
+            <div>
+              <div class="job-tags">
+                <span class="tag tag-green">当日结算</span>
+                <span class="tag tag-orange">餐饮</span>
+              </div>
+              <div class="slots-info" style="margin-top:4px">
+                <span style="color:#E03E3E;font-size:11px;font-weight:600">剩2人</span>
+              </div>
+            </div>
+            <button class="btn-apply">立即申请</button>
+          </div>
+        </div>
+
+        <!-- Job Card 2 -->
+        <div class="job-card" onclick="goToDetail()">
+          <div class="job-card-top">
+            <div class="company-logo" style="background:#E8F0FE">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#1A73E8" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 9l2-5h14l2 5" stroke="#1A73E8" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 9v1a3 3 0 006 0V9" stroke="#1A73E8" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div class="job-main">
+              <div class="job-title">便利蜂夜班收银</div>
+              <div class="job-company">便利蜂（静安寺店）· 2.5km</div>
+            </div>
+            <div class="job-wage">¥30<small>/时</small></div>
+          </div>
+          <div class="job-meta">
+            <span>
+              <svg viewBox="0 0 12 12" fill="none"><rect x="1" y="2" width="10" height="9" rx="1.5" stroke="#999" stroke-width="1.1"/><path d="M4 1v2M8 1v2M1 5h10" stroke="#999" stroke-width="1.1" stroke-linecap="round"/></svg>
+              05月21日
+            </span>
+            <span>
+              <svg viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#999" stroke-width="1.1"/><path d="M6 4v2.5L7.5 8" stroke="#999" stroke-width="1.1" stroke-linecap="round"/></svg>
+              22:00–06:00
+            </span>
+            <span>招5人</span>
+          </div>
+          <div class="job-footer">
+            <div class="job-tags">
+              <span class="tag tag-orange">夜班补</span>
+              <span class="tag tag-blue">交通补</span>
+            </div>
+            <button class="btn-apply">立即申请</button>
+          </div>
+        </div>
+
+        <!-- Job Card 3 -->
+        <div class="job-card" onclick="goToDetail()">
+          <div class="job-card-top">
+            <div class="company-logo" style="background:#E8F8EE">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 8L12 3 3 8v8l9 5 9-5V8z" stroke="#1BB86A" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 8l9 5 9-5M12 13v8" stroke="#1BB86A" stroke-width="1.5" stroke-linecap="round"/><path d="M7.5 5.5L16.5 10.5" stroke="#1BB86A" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </div>
+            <div class="job-main">
+              <div class="job-title">盒马分拣员</div>
+              <div class="job-company">盒马鲜生（长宁店）· 3.1km</div>
+            </div>
+            <div class="job-wage">¥22<small>/时</small></div>
+          </div>
+          <div class="job-meta">
+            <span>05月22日</span>
+            <span>08:00–16:00</span>
+          </div>
+          <div class="job-footer">
+            <div class="job-tags">
+              <span class="urgency-badge">急招</span>
+              <span class="tag tag-gray">物流</span>
+            </div>
+            <button class="btn-apply">立即申请</button>
+          </div>
+        </div>
+
+        <!-- Job Card 4 -->
+        <div class="job-card" onclick="goToDetail()">
+          <div class="job-card-top">
+            <div class="company-logo" style="background:#FFF0F0">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M6 3h12l-1.5 11a2 2 0 01-2 1.8H9.5A2 2 0 017.5 14L6 3z" stroke="#FF6B18" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 7h2a2 2 0 010 4h-2" stroke="#FF6B18" stroke-width="1.5" stroke-linecap="round"/><path d="M8 19h8" stroke="#FF6B18" stroke-width="1.5" stroke-linecap="round"/><path d="M10 16v3M14 16v3" stroke="#FF6B18" stroke-width="1.4" stroke-linecap="round"/></svg>
+            </div>
+            <div class="job-main">
+              <div class="job-title">星巴克咖啡助理</div>
+              <div class="job-company">星巴克（静安寺店）· 2.0km</div>
+            </div>
+            <div class="job-wage">¥35<small>/时</small></div>
+          </div>
+          <div class="job-meta">
+            <span>05月20日</span>
+            <span>10:00–18:00</span>
+          </div>
+          <div class="job-footer">
+            <div class="job-tags">
+              <span class="tag tag-orange">高薪</span>
+              <span class="tag tag-green">当日结算</span>
+            </div>
+            <button class="btn-apply">立即申请</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchTab('home')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V21H15V15H9V21H3V9.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="nav-label">任务</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('shifts')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 2V5M16 2V5M3 9H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">排班</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('profile')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21C4 17.134 7.134 14 11 14H13C16.866 14 20 17.134 20 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: SHIFTS ============ -->
+  <div class="screen" id="screen-shifts">
+    <div class="shifts-header">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="status-icons">
+          <div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+          <span style="font-size:13px">WiFi</span>
+          <div class="battery"><div class="battery-fill"></div></div>
+        </div>
+      </div>
+      <div class="shifts-top">
+        <h2>班次 · 考勤</h2>
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="white" stroke-width="1.8"/><path d="M17 17L21 21" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </div>
+      <div class="stats-row">
+        <div class="stat-item">
+          <div class="stat-label">本月累计工时</div>
+          <div class="stat-value">32<small> h</small></div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">累计收入</div>
+          <div class="stat-value"><small>¥</small>850</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scroll-content">
+      <div class="checkin-card" style="margin-top:-12px; margin-left:12px; margin-right:12px; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:16px; background:white; flex-shrink:0;">
+        <div class="checkin-alert">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zm0 4v4m0 2v.5" stroke="#CC5500" stroke-width="1.3" stroke-linecap="round"/></svg>
+          请完善实名认证，以确保顺畅接单…
+          <button class="btn-verify">去认证</button>
+        </div>
+        <button class="btn-qr">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="5" y="5" width="3" height="3" fill="white"/><rect x="16" y="5" width="3" height="3" fill="white"/><rect x="5" y="16" width="3" height="3" fill="white"/><path d="M14 14h2v2h-2zM18 14h3v2h-3zM14 18h2v3h-2zM18 18h3v3h-3z" fill="white"/></svg>
+          扫码签到/签退
+        </button>
+      </div>
+
+      <div class="calendar-section" style="margin:10px 12px; border-radius:12px; background:white; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:14px;">
+        <div class="cal-header">
+          <h3>2023年 10月</h3>
+          <div class="cal-nav">
+            <button><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8L10 12" stroke="#999" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <button><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4L10 8L6 12" stroke="#999" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          </div>
+        </div>
+        <div class="cal-days-header">
+          <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+        </div>
+        <div class="cal-grid">
+          <span class="cal-day other-month">24</span>
+          <span class="cal-day other-month">25</span>
+          <span class="cal-day other-month">26</span>
+          <span class="cal-day other-month">27</span>
+          <span class="cal-day other-month">28</span>
+          <span class="cal-day other-month">29</span>
+          <span class="cal-day other-month">30</span>
+          <span class="cal-day">1</span>
+          <span class="cal-day">2</span>
+          <span class="cal-day">3</span>
+          <span class="cal-day">4</span>
+          <span class="cal-day">5</span>
+          <span class="cal-day has-dot">6</span>
+          <span class="cal-day today has-dot">7</span>
+          <span class="cal-day has-dot">8</span>
+          <span class="cal-day">9</span>
+          <span class="cal-day">10</span>
+          <span class="cal-day">11</span>
+          <span class="cal-day">12</span>
+          <span class="cal-day">13</span>
+          <span class="cal-day">14</span>
+          <span class="cal-day">15</span>
+          <span class="cal-day">16</span>
+          <span class="cal-day">17</span>
+          <span class="cal-day">18</span>
+          <span class="cal-day">19</span>
+          <span class="cal-day">20</span>
+          <span class="cal-day has-dot">21</span>
+          <span class="cal-day">22</span>
+          <span class="cal-day">23</span>
+          <span class="cal-day">24</span>
+          <span class="cal-day">25</span>
+          <span class="cal-day">26</span>
+          <span class="cal-day">27</span>
+          <span class="cal-day">28</span>
+          <span class="cal-day">29</span>
+          <span class="cal-day">30</span>
+          <span class="cal-day">31</span>
+          <span class="cal-day other-month">1</span>
+          <span class="cal-day other-month">2</span>
+          <span class="cal-day other-month">3</span>
+          <span class="cal-day other-month">4</span>
+        </div>
+      </div>
+
+      <div class="shift-list-section">
+        <div class="shift-section-title">
+          今日排班
+          <span class="shift-count-badge">2</span>
+        </div>
+
+        <!-- Active shift -->
+        <div class="shift-card active-shift">
+          <div class="shift-card-top">
+            <div>
+              <span class="shift-status-badge badge-active">● 正在工作中</span>
+            </div>
+            <span class="shift-wage">¥35/h</span>
+          </div>
+          <div class="shift-name">星巴克 – 咖啡助理</div>
+          <div class="shift-info" style="display:flex;align-items:center;gap:4px;">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1C4.57 1 3 2.57 3 4.5 3 7.25 6.5 12 6.5 12S10 7.25 10 4.5C10 2.57 8.43 1 6.5 1z" stroke="#FF6B18" stroke-width="1.3"/><circle cx="6.5" cy="4.5" r="1.3" fill="#FF6B18"/></svg>
+            静安寺店
+          </div>
+          <div class="shift-timer" id="timer-display">03:45:12</div>
+          <div class="shift-actions">
+            <button class="btn-rest">休息打卡</button>
+            <button class="btn-end">结束工作（签退）</button>
+          </div>
+        </div>
+
+        <!-- Pending shift -->
+        <div class="shift-card pending-shift">
+          <div class="shift-card-top">
+            <span class="shift-status-badge badge-pending">待开始</span>
+            <span class="shift-wage">¥28/h</span>
+          </div>
+          <div class="shift-name">盒马鲜生 – 理货员</div>
+          <div class="shift-info" style="display:flex;align-items:center;gap:4px;">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="#999" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#999" stroke-width="1.2" stroke-linecap="round"/></svg>
+            今天 18:00 – 22:00
+          </div>
+          <div class="shift-info" style="margin-top:3px;display:flex;align-items:center;gap:4px;">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M6.5 1C4.57 1 3 2.57 3 4.5 3 7.25 6.5 12 6.5 12S10 7.25 10 4.5C10 2.57 8.43 1 6.5 1z" stroke="#999" stroke-width="1.2"/><circle cx="6.5" cy="4.5" r="1.3" fill="#999"/></svg>
+            长宁来福士店（距离 2.5km）
+          </div>
+          <button class="btn-route">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" fill="#999"/></svg>
+            查看路线
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchTab('home')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V21H15V15H9V21H3V9.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="nav-label">任务</span>
+      </div>
+      <div class="nav-item active" onclick="switchTab('shifts')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 2V5M16 2V5M3 9H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">排班</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('profile')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21C4 17.134 7.134 14 11 14H13C16.866 14 20 17.134 20 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: JOB DETAIL ============ -->
+  <div class="screen" id="screen-detail">
+    <div class="status-bar" style="background:white; color:#333;">
+      <span class="time">9:41</span>
+      <div class="status-icons">
+        <div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+        <span style="font-size:13px">WiFi</span>
+        <div class="battery"><div class="battery-fill"></div></div>
+      </div>
+    </div>
+    <div class="detail-header">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6L9 12L15 18" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2>职位详情</h2>
+      <button class="back-btn">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12V20H8V16H11V20H15V12L9.5 7L4 12Z" stroke="#1A1A1A" stroke-width="1.8" stroke-linejoin="round"/><path d="M9.5 3L1 11M9.5 3L18 11" stroke="#1A1A1A" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <div class="scroll-content">
+      <div style="padding:14px 16px; background:white; margin-bottom:8px;">
+        <div class="detail-title-row">
+          <div>
+            <div class="detail-job-title">便利店理货员（夜班）</div>
+          </div>
+          <div class="detail-wage">¥200<small>/天</small></div>
+        </div>
+        <div class="detail-tags">
+          <span class="tag tag-orange" style="padding:4px 10px">急招</span>
+          <span class="tag tag-gray" style="padding:4px 10px">日结</span>
+        </div>
+        <div class="detail-meta-row">
+          <svg viewBox="0 0 15 15" fill="none"><rect x="1" y="2" width="13" height="12" rx="2" stroke="#999" stroke-width="1.3"/><path d="M5 1v2M10 1v2M1 6h13" stroke="#999" stroke-width="1.3" stroke-linecap="round"/></svg>
+          2023年10月25日（周三）
+        </div>
+        <div class="detail-meta-row">
+          <svg viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="5.5" stroke="#999" stroke-width="1.3"/><path d="M7.5 5V8L9 9.5" stroke="#999" stroke-width="1.3" stroke-linecap="round"/></svg>
+          22:00 – 06:00（8小时）
+        </div>
+      </div>
+
+      <div class="section-block" style="margin:0 12px 10px;">
+        <h4>工作地点</h4>
+        <div class="location-info" style="margin-bottom:8px;">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5C5.5 1.5 3.5 3.5 3.5 6C3.5 9.5 8 14.5 8 14.5C8 14.5 12.5 9.5 12.5 6C12.5 3.5 10.5 1.5 8 1.5Z" stroke="#FF6B18" stroke-width="1.4"/><circle cx="8" cy="6" r="1.5" fill="#FF6B18"/></svg>
+          <span class="location-text">全家便利店（陆家嘴店）<br><span style="font-size:11.5px; color:#999">浦东新区世纪大道88号金茂大厦B1层</span></span>
+          <span class="location-dist">2.5 km</span>
+        </div>
+        <div class="map-placeholder">
+          <div class="map-grid"></div>
+          <div class="map-road-h" style="top:40%; height:10px;"></div>
+          <div class="map-road-h" style="top:65%; height:8px;"></div>
+          <div class="map-road-v" style="left:35%; width:8px;"></div>
+          <div class="map-road-v" style="left:60%; width:10px;"></div>
+          <div class="map-pin" style="top:30%; left:55%;">
+            <div class="map-pin-dot"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-block" style="margin:0 12px 10px;">
+        <h4>工作内容</h4>
+        <p style="font-size:13.5px; color:#555; line-height:1.7">
+          负责店内商品理货、补货、卫生维护，确保货架整齐美观，及时清理过期或损坏商品。协助店长完成其他日常事务。
+        </p>
+      </div>
+
+      <div class="section-block" style="margin:0 12px 10px;">
+        <h4>岗位要求</h4>
+        <div class="req-item">
+          <div class="req-icon"><svg viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="#1BB86A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          需持有效健康证
+        </div>
+        <div class="req-item">
+          <div class="req-icon"><svg viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="#1BB86A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          年满18周岁
+        </div>
+        <div class="req-item">
+          <div class="req-icon"><svg viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="#1BB86A" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          穿着整洁，态度良好
+        </div>
+      </div>
+
+      <div class="section-block" style="margin:0 12px 10px;">
+        <div class="company-row">
+          <div class="company-avatar">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 9h18v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke="#FF6B18" stroke-width="1.5" stroke-linejoin="round"/><path d="M3 9l2-5h14l2 5" stroke="#FF6B18" stroke-width="1.5" stroke-linejoin="round"/><path d="M9 9v1a3 3 0 006 0V9" stroke="#FF6B18" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <div>
+            <div class="company-name">全家便利（直营）</div>
+            <div class="company-rating" style="color:#888; font-size:12px">认证企业 · 4.9分（120条评价）</div>
+          </div>
+        </div>
+        <div class="cancel-policy">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 1a6 6 0 100 12A6 6 0 007 1zm0 4v3m0 2v.5" stroke="#CC5500" stroke-width="1.3" stroke-linecap="round"/></svg>
+          取消政策：工作开始前4小时可免费取消，4小时内取消将影响您的信用评分。
+        </div>
+      </div>
+
+      <div style="height:80px;"></div>
+    </div>
+
+    <div class="detail-bottom">
+      <button class="detail-msg-btn">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M21 15C21 16.1046 20.1046 17 19 17H7L3 21V5C3 3.89543 3.89543 3 5 3H19C20.1046 3 21 3.89543 21 5V15Z" stroke="#666" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn-apply-big">立即申请</button>
+    </div>
+  </div>
+
+  <!-- ============ SCREEN: PROFILE ============ -->
+  <div class="screen" id="screen-profile">
+    <div class="profile-header">
+      <div class="status-bar">
+        <span class="time">9:41</span>
+        <div class="status-icons">
+          <div class="signal-bars"><span></span><span></span><span></span><span></span></div>
+          <span style="font-size:13px">WiFi</span>
+          <div class="battery"><div class="battery-fill"></div></div>
+        </div>
+      </div>
+      <div class="profile-top">
+        <div class="profile-avatar" style="background:#FFB380;">
+          <svg width="34" height="34" viewBox="0 0 34 34" fill="none"><circle cx="17" cy="13" r="6" fill="rgba(255,255,255,0.85)"/><path d="M5 32c0-6.627 5.373-10 12-10s12 3.373 12 10" stroke="rgba(255,255,255,0.85)" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name">李星辰</div>
+          <div class="profile-badges">
+            <span class="profile-badge" style="display:inline-flex;align-items:center;gap:3px;">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M2 5.5L4.5 8L9 3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              已实名
+            </span>
+            <span class="profile-badge" style="display:inline-flex;align-items:center;gap:3px;">
+              <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M5.5 9.5S1 6.8 1 3.8C1 2.25 2.2 1 3.75 1 4.6 1 5.35 1.4 5.5 2 5.65 1.4 6.4 1 7.25 1 8.8 1 10 2.25 10 3.8c0 3-4.5 5.7-4.5 5.7z" stroke="white" stroke-width="1.2" fill="none"/></svg>
+              健康证认证
+            </span>
+          </div>
+        </div>
+        <div class="profile-qr">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="14" y="3" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="3" y="14" width="7" height="7" rx="1" stroke="white" stroke-width="1.8"/><rect x="5" y="5" width="3" height="3" fill="white"/><rect x="16" y="5" width="3" height="3" fill="white"/><rect x="5" y="16" width="3" height="3" fill="white"/><path d="M14 14h6v2h-6zm0 4h2v2h-2zm4 0h2v2h-2z" fill="white"/></svg>
+        </div>
+      </div>
+      <div class="progress-section">
+        <div class="progress-label">
+          <span>简历完整度</span>
+          <span>85%</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:85%"></div>
+        </div>
+        <div class="progress-hint" style="display:flex;align-items:center;justify-content:flex-end;gap:2px;">完善简历获得更多机会 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3.5 2.5L6.5 5L3.5 7.5" stroke="rgba(255,255,255,0.7)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+
+    <div class="scroll-content">
+      <!-- Income Card -->
+      <div class="income-card" style="margin:-14px 12px 0; border-radius:12px; background:white; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:16px;">
+        <div class="income-header">
+          <h3>收入中心</h3>
+          <a href="#" style="display:inline-flex;align-items:center;gap:2px;">查看明细 <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3.5 2.5L6.5 5L3.5 7.5" stroke="#999" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        </div>
+        <div class="income-total">¥ 8,450.00 <small>总收益（元）</small></div>
+        <div class="income-split">
+          <div class="income-item">
+            <div class="income-item-label">待结算</div>
+            <div class="income-item-value" style="color:#FF6B18">¥ 450.00</div>
+          </div>
+          <div class="income-item">
+            <div class="income-item-label">已付款</div>
+            <div class="income-item-value">¥ 8,000.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Strip -->
+      <div class="stats-strip" style="margin:10px 12px; border-radius:12px; background:white; box-shadow:0 2px 12px rgba(0,0,0,0.08); padding:14px 16px; display:flex;">
+        <div class="stats-strip-item">
+          <div class="stats-strip-value">5</div>
+          <div class="stats-strip-label">合作商家</div>
+        </div>
+        <div class="stats-strip-item" style="border-left:1px solid #EEE;">
+          <div class="stats-strip-value">48h</div>
+          <div class="stats-strip-label">服务工时</div>
+        </div>
+        <div class="stats-strip-item" style="border-left:1px solid #EEE;">
+          <div class="stats-strip-value highlight">99%</div>
+          <div class="stats-strip-label">好评率</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions" style="display:grid; grid-template-columns:repeat(4,1fr); gap:0; background:white; border-radius:12px; margin:0 12px 10px; padding:14px 0; box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <div class="action-item">
+          <div class="action-icon" style="background:#FFF0E6;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 5H7C5.9 5 5 5.9 5 7V19C5 20.1 5.9 21 7 21H17C18.1 21 19 20.1 19 19V7C19 5.9 18.1 5 17 5H15M9 5C9 5.6 9.4 6 10 6H14C14.6 6 15 5.6 15 5C15 4.4 14.6 4 14 4H10C9.4 4 9 4.4 9 5Z" stroke="#FF6B18" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="action-label">我的申请</span>
+        </div>
+        <div class="action-item">
+          <div class="action-icon" style="background:#FFF0F5;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" stroke="#E05090" stroke-width="1.6" fill="none"/></svg>
+          </div>
+          <span class="action-label">我的收藏</span>
+        </div>
+        <div class="action-item">
+          <div class="action-icon" style="background:#E8F8EE;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L15 9H22L16 14L18 21L12 17L6 21L8 14L2 9H9L12 2Z" stroke="#1BB86A" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <span class="action-label">收入记录</span>
+        </div>
+        <div class="action-item">
+          <div class="action-icon" style="background:#E8F0FE;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm-.997-6l7.07-7.071-1.414-1.414-5.656 5.657-2.829-2.829-1.414 1.414L11.003 16z" stroke="#1A73E8" stroke-width="1.4" fill="none"/></svg>
+          </div>
+          <span class="action-label">健康证</span>
+        </div>
+      </div>
+
+      <!-- More actions row 2 -->
+      <div class="quick-actions" style="display:grid; grid-template-columns:repeat(3,1fr); gap:0; background:white; border-radius:12px; margin:0 12px 10px; padding:14px 0; box-shadow:0 2px 12px rgba(0,0,0,0.08);">
+        <div class="action-item">
+          <div class="action-icon" style="background:#FFF0E6;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 12c2.7 0 4-1.3 4-4s-1.3-4-4-4-4 1.3-4 4 1.3 4 4 4zm0 2c-2.7 0-8 1.35-8 4v2h16v-2c0-2.65-5.3-4-8-4z" stroke="#FF6B18" stroke-width="1.4" fill="none"/></svg>
+          </div>
+          <span class="action-label">实名认证</span>
+        </div>
+        <div class="action-item">
+          <div class="action-icon" style="background:#F5F5F5;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#666" stroke-width="1.6"/><path d="M12 8v4l3 3" stroke="#666" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </div>
+          <span class="action-label">帮助中心</span>
+        </div>
+        <div class="action-item">
+          <div class="action-icon" style="background:#F0FFF4;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" stroke="#1BB86A" stroke-width="1.4" fill="none"/></svg>
+          </div>
+          <span class="action-label">在线客服</span>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-rows" style="margin:0 12px 20px; border-radius:12px; background:white; box-shadow:0 2px 12px rgba(0,0,0,0.08); overflow:hidden;">
+        <div class="settings-row">
+          <svg viewBox="0 0 18 18" fill="none"><path d="M9 11.5C10.38 11.5 11.5 10.38 11.5 9C11.5 7.62 10.38 6.5 9 6.5C7.62 6.5 6.5 7.62 6.5 9C6.5 10.38 7.62 11.5 9 11.5Z" stroke="#999" stroke-width="1.3"/><path d="M14.5 9C14.5 8.72 14.47 8.45 14.43 8.19L16 6.82L14.5 4.18L12.58 4.88C12.18 4.59 11.73 4.36 11.25 4.2L11 2H8L7.75 4.2C7.27 4.36 6.82 4.59 6.42 4.88L4.5 4.18L3 6.82L4.57 8.19C4.53 8.45 4.5 8.72 4.5 9C4.5 9.28 4.53 9.55 4.57 9.81L3 11.18L4.5 13.82L6.42 13.12C6.82 13.41 7.27 13.64 7.75 13.8L8 16H11L11.25 13.8C11.73 13.64 12.18 13.41 12.58 13.12L14.5 13.82L16 11.18L14.43 9.81C14.47 9.55 14.5 9.28 14.5 9Z" stroke="#999" stroke-width="1.3"/></svg>
+          <span>设置</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="chevron"><path d="M5 4L8.5 7L5 10" stroke="#CCC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="settings-row">
+          <svg viewBox="0 0 18 18" fill="none"><path d="M9 16C9 16 2 12 2 7C2 4.24 4.24 2 7 2C8.24 2 9.38 2.47 10.24 3.24C11.1 2.47 12.24 2 13.5 2C16.26 2 18.5 4.24 18.5 7" stroke="#999" stroke-width="1.3" stroke-linecap="round"/><path d="M14 9L14 17M11 13L17 13" stroke="#999" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span>在线客服</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" class="chevron"><path d="M5 4L8.5 7L5 10" stroke="#CCC" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="switchTab('home')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M3 9.5L12 3L21 9.5V21H15V15H9V21H3V9.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <span class="nav-label">任务</span>
+      </div>
+      <div class="nav-item" onclick="switchTab('shifts')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="3" stroke="currentColor" stroke-width="1.8"/><path d="M8 2V5M16 2V5M3 9H21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">排班</span>
+      </div>
+      <div class="nav-item active" onclick="switchTab('profile')">
+        <div class="nav-icon">
+          <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 21C4 17.134 7.134 14 11 14H13C16.866 14 20 17.134 20 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </div>
+        <span class="nav-label">我的</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+var currentScreen = 'login';
+var prevScreen = 'home';
+var timerSeconds = 13512;
+var timerInterval;
+
+function show(id, slide) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active', 'slide-in');
+  });
+  var el = document.getElementById(id);
+  el.classList.add('active');
+  if (slide) el.classList.add('slide-in');
+}
+
+function goToHome() {
+  prevScreen = 'login';
+  currentScreen = 'home';
+  show('screen-home', true);
+  startTimer();
+}
+
+function goToDetail() {
+  prevScreen = currentScreen;
+  currentScreen = 'detail';
+  show('screen-detail', true);
+}
+
+function goBack() {
+  currentScreen = prevScreen;
+  show('screen-' + prevScreen, false);
+}
+
+function switchTab(tab) {
+  prevScreen = currentScreen;
+  currentScreen = tab;
+  show('screen-' + tab, false);
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerInterval = setInterval(function() {
+    timerSeconds++;
+    var h = Math.floor(timerSeconds / 3600);
+    var m = Math.floor((timerSeconds % 3600) / 60);
+    var s = timerSeconds % 60;
+    var hh = String(h).padStart(2,'0');
+    var mm = String(m).padStart(2,'0');
+    var ss = String(s).padStart(2,'0');
+    var el = document.getElementById('timer-display');
+    if (el) el.textContent = hh + ':' + mm + ':' + ss;
+  }, 1000);
+}
+
+// Filter tab interaction
+document.querySelectorAll('.filter-tab').forEach(function(tab) {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.filter-tab').forEach(function(t){ t.classList.remove('active'); });
+    tab.classList.add('active');
+  });
+});
+
+// QR button
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.btn-qr')) {
+    var btn = e.target.closest('.btn-qr');
+    var orig = btn.innerHTML;
+    var checkSvg = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M2.5 7L5.5 10L11.5 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.style.background = '#E55A10';
+    btn.innerHTML = checkSvg + '已签到';
+    setTimeout(function() {
+      btn.style.background = '';
+      btn.innerHTML = orig;
+    }, 2000);
+  }
+  if (e.target.closest('.btn-end')) {
+    var btn = e.target.closest('.btn-end');
+    var checkSvg2 = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M2.5 7L5.5 10L11.5 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.style.background = '#1BB86A';
+    btn.innerHTML = checkSvg2 + '已签退';
+    setTimeout(function() {
+      btn.style.background = '';
+      btn.innerHTML = '结束工作（签退）';
+    }, 2000);
+  }
+  if (e.target.closest('.btn-apply') || e.target.closest('.btn-apply-big')) {
+    var btn = e.target.closest('.btn-apply') || e.target.closest('.btn-apply-big');
+    var origHtml = btn.innerHTML;
+    var checkSvg3 = '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="vertical-align:-2px;margin-right:4px"><path d="M2.5 7L5.5 10L11.5 4" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    btn.style.background = '#1BB86A';
+    btn.innerHTML = checkSvg3 + '已申请';
+    setTimeout(function() {
+      btn.style.background = '';
+      btn.innerHTML = origHtml;
+    }, 2000);
+  }
+});
+</script>
+</body>
+</html>
